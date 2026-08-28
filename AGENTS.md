@@ -1,6 +1,6 @@
 # AGENTS.md
 
-ZCode 代理在本仓库工作时的快速指引。更完整的架构与配置说明见 [CLAUDE.md](CLAUDE.md)（本仓库的主要指令文件）。文档与源码不一致时一律以源码和 `go.mod` 为准。
+本仓库开发与协作的快速指引。文档与源码不一致时一律以源码和 `go.mod` 为准。
 
 ## 项目概览
 
@@ -44,5 +44,4 @@ golangci-lint run -v                 # 或 make golint
 
 ## 详细参考
 
-- [CLAUDE.md](CLAUDE.md)：Application 生命周期、Hook 阶段、配置系统、Server/Component/Worker 抽象的完整说明。
 - [docs/README.md](docs/README.md)：组件文档入口。

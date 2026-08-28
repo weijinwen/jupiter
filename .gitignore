@@ -33,6 +33,7 @@ vendor/
 .DS_Store
 .AppleDouble
 .LSOverride
+.mimosa
 
 # Icon must end with two \r
 Icon
