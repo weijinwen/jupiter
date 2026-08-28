@@ -1,0 +1,11 @@
+# xhertz 示例配置
+# 运行：go run . --config=config.toml
+# 注意：多词键名须用 camelCase 才能绑定到 Config 字段（jupiter 的 conf 按
+# 字段名大小写不敏感匹配，不处理下划线）。
+[server.hertz]
+host = "0.0.0.0"
+port = 9092
+mode = "release"                 # release / debug / test（映射 hlog 日志级别）
+disableMetric = false            # true 时关闭内置 Prometheus 指标中间件
+slowQueryThresholdInMilli = 500  # 访问日志慢查询阈值（毫秒），0 关闭
+# serviceAddress = "10.0.0.1:9092"  # 注册信息中上报的地址，默认 host:port

@@ -1,0 +1,190 @@
+// Copyright 2020 Douyu
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package xmap
+
+import (
+	"reflect"
+	"testing"
+
+	"github.com/davecgh/go-spew/spew"
+)
+
+func TestMergeStringMap(t *testing.T) {
+	type args struct {
+		dest map[string]any
+		src  map[string]any
+		tar  map[string]any
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "二维测试",
+			args: args{
+				dest: map[string]any{
+					"2w": map[string]any{
+						"test":  "2wtd",
+						"test1": "2wtd1",
+					},
+					"2wa": map[string]any{
+						"test":  "2wtd",
+						"test1": "2wtd1",
+					},
+					"2wi": map[any]any{
+						"test":  "2wtd",
+						"test1": "2wtd1",
+					},
+				},
+				src: map[string]any{
+					"2w": map[string]any{
+						"test":  "2wtds",
+						"test1": "2wtd1s",
+					},
+					"2wb": map[string]any{
+						"test":  "2wtds",
+						"test1": "2wtd1s",
+					},
+					"2wi": map[any]any{
+						"test":  "2wtds",
+						"test1": "2wtd1s",
+					},
+				},
+				tar: map[string]any{
+					"2w": map[string]any{
+						"test":  "2wtds",
+						"test1": "2wtd1s",
+					},
+					"2wb": map[string]any{
+						"test":  "2wtds",
+						"test1": "2wtd1s",
+					},
+					"2wa": map[string]any{
+						"test":  "2wtd",
+						"test1": "2wtd1",
+					},
+					"2wi": map[string]any{
+						"test":  "2wtds",
+						"test1": "2wtd1s",
+					},
+				},
+			},
+		},
+		{
+			name: "一维测试",
+			args: args{
+				dest: map[string]any{
+					"1w":  "tt",
+					"1wa": "mq",
+				},
+				src: map[string]any{
+					"1w":  "tts",
+					"1wb": "bq",
+				},
+				tar: map[string]any{
+					"1w":  "tts",
+					"1wa": "mq",
+					"1wb": "bq",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			MergeStringMap(tt.args.dest, tt.args.src)
+			if !reflect.DeepEqual(tt.args.dest, tt.args.tar) {
+				spew.Dump(tt.args.dest)
+				t.FailNow()
+			}
+		})
+	}
+}
+
+func TestDeepSearchInMap(t *testing.T) {
+	type args struct {
+		m     map[string]any
+		paths []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]any
+	}{
+		{
+			name: "case 1: 二维测试",
+			args: args{
+				m: map[string]any{
+					"2w": map[string]any{
+						"test":  "2wtd",
+						"test1": "2wtd1",
+					},
+					"2wa": map[string]any{
+						"test":  "2wtd",
+						"test1": "2wtd1",
+					},
+				},
+				paths: []string{"2w"},
+			},
+			want: map[string]any{
+				"test":  "2wtd",
+				"test1": "2wtd1",
+			},
+		},
+		{
+			name: "case 2: 二维测试",
+			args: args{
+				m: map[string]any{
+					"2w": map[string]any{
+						"test":  "2wtd",
+						"test1": "2wtd1",
+					},
+					"2wa": map[string]any{
+						"testa":  "2wtd",
+						"testa1": "2wtd1",
+					},
+				},
+				paths: []string{"2wa"},
+			},
+			want: map[string]any{
+				"testa":  "2wtd",
+				"testa1": "2wtd1",
+			},
+		},
+		{
+			name: "case 2: not found",
+			args: args{
+				m: map[string]any{
+					"2w": map[string]any{
+						"test":  "2wtd",
+						"test1": "2wtd1",
+					},
+					"2wa": map[string]any{
+						"testa":  "2wtd",
+						"testa1": "2wtd1",
+					},
+				},
+				paths: []string{"not found"},
+			},
+			want: map[string]any{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := DeepSearchInMap(tt.args.m, tt.args.paths...); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DeepSearchInMap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
