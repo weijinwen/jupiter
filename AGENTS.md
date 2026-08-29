@@ -4,7 +4,7 @@
 
 ## 项目概览
 
-Jupiter 是 Go 微服务框架库，模块路径 `github.com/weijinwen/jupiter`，`go.mod` 声明 `go 1.25.0`（README/文档中的版本号可能滞后，以 `go.mod` 为准）。根包 `jupiter.go` / `jupiter_option.go` 仅薄封装 `pkg/core/application`，真正实现都在 `pkg/` 下。
+Jupiter 是 Go 微服务框架库，参考了 [douyu/jupiter](https://github.com/douyu/jupiter) 项目，在其设计思路上精简重构，去除了不需要的功能，仅保留核心组件。模块路径 `github.com/weijinwen/jupiter`，`go.mod` 声明 `go 1.25.0`（README/文档中的版本号可能滞后，以 `go.mod` 为准）。根包 `jupiter.go` / `jupiter_option.go` 仅薄封装 `pkg/core/application`，真正实现都在 `pkg/` 下。
 
 主要目录：
 
@@ -40,9 +40,9 @@ go build ./... && go vet ./...
 make unit-test                       # = go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 go test ./pkg/conf                   # 单包
 go test ./pkg/conf -run TestLoadFromReader -v   # 单函数
-make covsh-unit                      # 查看覆盖率报告
+make covsh-unit                      # 查看覆盖率报告（需先安装 gocovsh）
 
-# Lint（仓库无 .golangci.yml，使用默认配置）
+# Lint（需先安装 golangci-lint，使用默认配置）
 golangci-lint run -v                 # 或 make golint
 ```
 
@@ -59,8 +59,6 @@ golangci-lint run -v                 # 或 make golint
 ## 重要注意事项（改动前必读）
 
 - **vendor 与 go.sum 被忽略**：`vendor/` 与 `go.sum` 在本地存在但被 `.gitignore` 忽略、未纳入版本控制。干净 checkout 后先 `go mod download`；本地有 `vendor/` 时 go 默认以 vendor 模式构建。
-- **多个 Makefile 目标当前不可用**：`api/`、`proto/`、`tools/`、`test/e2e` 目录不在仓库中，因此 `make lint`/`generate`/`breaking`/`test-proto2http`/`validate`/`serve`/`update`/`e2e-test`/`init` 等 buf/swagger 目标都会失败；`make lintmd` 依赖同样缺失的 `.github/markdown_lint_config.json`，也会失败。
-- **不要用 `make all` 做通用验证**：它依赖未定义的 `build`/`fmt`/`errcheck` 目标。默认目标是 `make help`。
 - **跨平台**：Makefile 使用 `find`/`grep`/`awk`，Windows 上优先用 Git Bash 或直接运行对应 `go` 命令。
 - **xhertz 端口占用即 panic**：Hertz 由 netpoll 自管 listener，端口被占时进程在启动阶段直接 panic 退出（不同于 xgin 在构建期报错），部署与集成测试需确保端口可用。
 - **改文档前先用源码验证**：README/docs 中部分命令、示例路径、配置 API 可能滞后于源码（如 docs 声称 Go 1.23/1.24，`go.mod` 实为 1.25.0；quickstart 的 `WithConfigFile` 已不存在）。新增服务器组件时同步更新 `docs/servers.md`。
