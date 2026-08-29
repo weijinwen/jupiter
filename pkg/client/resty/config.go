@@ -15,27 +15,17 @@
 package resty
 
 import (
-	"errors"
-	"net/http"
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/samber/lo"
 	"github.com/spf13/cast"
 	"github.com/weijinwen/jupiter/pkg/conf"
 	"github.com/weijinwen/jupiter/pkg/core/constant"
 	"github.com/weijinwen/jupiter/pkg/core/ecode"
-	"github.com/weijinwen/jupiter/pkg/core/metric"
-	"github.com/weijinwen/jupiter/pkg/core/singleton"
 	"github.com/weijinwen/jupiter/pkg/util/xdebug"
 	"github.com/weijinwen/jupiter/pkg/xlog"
 	"go.uber.org/zap"
 )
-
-var errSlowCommand = errors.New("http resty slow command")
-
-// Client ...
-type Client = resty.Client
 
 // Config ...
 type (
@@ -63,7 +53,16 @@ type (
 		// 访问日志开关
 		EnableAccessLog bool `json:"enableAccessLog" toml:"enableAccessLog"`
 
-		// 重试
+		// 默认请求头，每次请求都会带上
+		Headers map[string]string `json:"headers" toml:"headers"`
+		// Bearer Token 认证；与 Username/Password 二选一，优先生效
+		AuthToken string `json:"authToken" toml:"authToken"`
+		// HTTP Basic 认证用户名
+		Username string `json:"username" toml:"username"`
+		// HTTP Basic 认证密码
+		Password string `json:"password" toml:"password"`
+
+		// 重试条件，返回 true 时触发重试，直到达到 RetryCount 次数
 		RetryCondition resty.RetryConditionFunc `json:"-" toml:"-"`
 		// 日志
 		logger *zap.Logger
@@ -109,93 +108,4 @@ func DefaultConfig() *Config {
 		logger: xlog.Jupiter().Named(ecode.ModeClientResty),
 		Name:   "default",
 	}
-}
-
-func (config *Config) Build() (*resty.Client, error) {
-	if config.Addr == "" {
-		return nil, errors.New("no addr found")
-	}
-
-	client := resty.New()
-	client.SetBaseURL(config.Addr)
-	client.SetTimeout(config.Timeout)
-	client.SetDebug(config.Debug)
-	client.SetRetryCount(config.RetryCount)
-	client.SetCloseConnection(config.CloseConnection)
-	client.SetRedirectPolicy(resty.NoRedirectPolicy())
-
-	if config.RetryWaitTime != time.Duration(0) {
-		client.SetRetryWaitTime(config.RetryWaitTime)
-	}
-
-	if config.RetryMaxWaitTime != time.Duration(0) {
-		client.SetRetryMaxWaitTime(config.RetryMaxWaitTime)
-	}
-
-	client.OnError(func(r *resty.Request, err error) {
-		if config.EnableMetric {
-			metric.ClientHandleCounter.WithLabelValues(metric.TypeHTTP, "resty", r.Method, r.RawRequest.Host, "error").Inc()
-		}
-	})
-
-	client.OnBeforeRequest(func(c *resty.Client, r *resty.Request) error {
-		return nil
-	})
-
-	client.SetPreRequestHook(func(c *resty.Client, r *http.Request) error {
-		return nil
-	})
-
-	client.OnAfterResponse(func(c *resty.Client, r *resty.Response) error {
-		cost := r.Time()
-
-		if config.EnableMetric {
-			metric.ClientHandleCounter.WithLabelValues(metric.TypeHTTP, "resty", r.Request.Method, c.HostURL, r.Status()).Inc()
-			metric.ClientHandleHistogram.WithLabelValues(metric.TypeHTTP, "resty", r.Request.Method, c.HostURL).Observe(cost.Seconds())
-		}
-
-		if config.SlowThreshold > time.Duration(0) {
-			// 慢日志
-			if cost > config.SlowThreshold {
-				config.logger.Error("slow",
-					xlog.FieldErr(errSlowCommand),
-					xlog.FieldMethod(r.Request.Method),
-					xlog.FieldCost(cost),
-					xlog.FieldAddr(r.Request.URL),
-					xlog.FieldCode(int32(r.StatusCode())),
-				)
-			}
-		}
-
-		return nil
-	})
-
-	return client, nil
-}
-
-// Singleton returns a singleton client conn.
-func (config *Config) Singleton() (*Client, error) {
-	if client, ok := singleton.Load(constant.ModuleClientResty, config.Name); ok && client != nil {
-		return client.(*Client), nil
-	}
-
-	client, err := config.Build()
-	if err != nil {
-		xlog.Jupiter().Error("build resty client failed", zap.Error(err))
-		return nil, err
-	}
-
-	singleton.Store(constant.ModuleClientResty, config.Name, client)
-
-	return client, nil
-}
-
-// MustBuild panics when error found.
-func (c *Config) MustBuild() *resty.Client {
-	return lo.Must(c.Build())
-}
-
-// MustSingleton panics when error found.
-func (config *Config) MustSingleton() *Client {
-	return lo.Must(config.Singleton())
 }
