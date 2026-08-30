@@ -225,11 +225,12 @@ Governor 服务器提供管理接口，包括健康检查、配置管理、指�
 #### 基本使用
 
 ```go
-// 创建 Governor 服务器
-govServer := governor.Default(
-    governor.WithHost("0.0.0.0"),
-    governor.WithPort(9091),
+import (
+    "github.com/weijinwen/jupiter/pkg/server/governor"
 )
+
+// 创建 Governor 服务器
+govServer := governor.StdConfig("governor").Build()
 
 // 将服务器注册到应用
 app.Serve(govServer)
@@ -240,21 +241,42 @@ app.Serve(govServer)
 ```toml
 # Governor 服务器配置
 [server.governor]
+# 服务主机地址，默认从 flag 读取
 host = "0.0.0.0"
-port = 9091
-enable_pprof = true
-enable_metrics = true
-enable_config = true
+# 服务端口，默认 9093
+port = 9093
+# 网络类型，默认 tcp4
+network = "tcp4"
+# 是否启用，默认 true
+enable = true
+# 是否注册到服务注册中心
+isRegistry = false
+# 服务地址（注册信息中上报的地址），默认 host:port
+serviceAddress = ""
 ```
+
+#### 配置说明
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `host` | string | "" | 服务主机地址 |
+| `port` | int | 9093 | 服务端口 |
+| `network` | string | "tcp4" | 网络类型 |
+| `enable` | bool | true | 是否启用 |
+| `isRegistry` | bool | false | 是否注册到服务注册中心 |
+| `serviceAddress` | string | "" | 服务地址（注册信息中上报） |
 
 #### 内置接口
 
 Governor 服务器提供了以下内置接口：
 
-- `/health`: 健康检查
-- `/metrics`: Prometheus 指标
-- `/debug/pprof`: pprof 性能分析
-- `/config`: 配置查看和修改
+- `/health`: 健康检查，返回 "SUCCESS"
+- `/configs`: 查看当前配置（支持 pretty=true 格式化）
+- `/debug/config`: 调试配置信息
+- `/debug/env`: 查看环境变量
+- `/build/info`: 查看构建信息（应用名称、版本、构建时间等）
+- `/debug/stats`: 查看运行时统计信息（支持 pretty=true 格式化）
+- `/metrics`: Prometheus 指标采集
 
 ## 多服务器支持
 

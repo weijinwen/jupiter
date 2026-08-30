@@ -11,8 +11,12 @@ Jupiter 框架提供了丰富的客户端组件，用于与外部服务进行通
 ### 基本使用
 
 ```go
+import (
+    "github.com/weijinwen/jupiter/pkg/client/resty"
+)
+
 // 创建 HTTP 客户端
-client := resty.StdConfig("example").Build()
+client := resty.StdConfig("example").MustSingleton()
 
 // GET 请求
 resp, err := client.R().Get("https://api.example.com/users")
@@ -38,24 +42,35 @@ fmt.Printf("响应: %s\n", resp.String())
 
 ```toml
 # HTTP 客户端配置
-[client.http.example]
-base_url = "https://api.example.com"
-timeout = "30s"
-retry_count = 3
-retry_wait_time = "100ms"
+[resty.example]
+# 目标服务地址（必填）
+addr = "https://api.example.com"
+# 请求超时时间，默认 3000ms
+timeout = "3000ms"
+# 失败重试次数，默认 0（不重试）
+retryCount = 0
+# 失败重试间隔时间，默认 100ms
+retryWaitTime = "100ms"
+# 失败重试最大等待时间，默认 100ms
+retryMaxWaitTime = "100ms"
+# 收到响应后是否立即关闭连接
+closeConnection = false
+# 调试开关
 debug = false
+# 指标采集开关，默认开启
+enableMetric = true
+# 访问日志开关
+enableAccessLog = false
+# 慢日志阈值，默认 500ms
+slowThreshold = "500ms"
 
-# TLS 配置
-[client.http.example.tls]
-enable = false
-cert_file = ""
-key_file = ""
-insecure_skip_verify = false
+# 默认请求头
+[resty.example.headers]
+Content-Type = "application/json"
+Accept = "application/json"
 
-# 代理配置
-[client.http.example.proxy]
-enable = false
-url = ""
+# 认证配置（AuthToken 和 Username/Password 二选一，AuthToken 优先）
+authToken = ""
 username = ""
 password = ""
 ```
@@ -87,31 +102,59 @@ if err != nil {
 fmt.Printf("用户: %s\n", user.Name)
 ```
 
+### 重试配置
+
+```go
+import (
+    "github.com/go-resty/resty/v2"
+    "github.com/weijinwen/jupiter/pkg/client/resty"
+)
+
+// 创建客户端
+config := resty.StdConfig("example")
+client := config.MustSingleton()
+
+// 设置重试条件
+client.SetRetryCondition(func(r *resty.Response, err error) bool {
+    // 返回 true 表示需要重试
+    return r.StatusCode() >= 500
+})
+
+// 或者通过配置设置
+config.RetryCondition = func(r *resty.Response, err error) bool {
+    return r.StatusCode() >= 500
+}
+```
+
 ## Redis 客户端
 
 ### 基本使用
 
 ```go
+import (
+    "github.com/weijinwen/jupiter/pkg/client/redis"
+)
+
 // 创建 Redis 客户端
-client := redis.StdConfig("default").Build()
+client := redis.StdConfig("default").MustSingleton()
 
 // 字符串操作
-err := client.Set("key", "value", 10*time.Minute).Err()
+err := client.Set(context.Background(), "key", "value", 10*time.Minute).Err()
 if err != nil {
     panic(err)
 }
-value, err := client.Get("key").Result()
+value, err := client.Get(context.Background(), "key").Result()
 if err != nil {
     panic(err)
 }
 fmt.Printf("值: %s\n", value)
 
 // 哈希操作
-err = client.HSet("user:1", "name", "John", "age", 30).Err()
+err = client.HSet(context.Background(), "user:1", "name", "John", "age", 30).Err()
 if err != nil {
     panic(err)
 }
-name, err := client.HGet("user:1", "name").Result()
+name, err := client.HGet(context.Background(), "user:1", "name").Result()
 if err != nil {
     panic(err)
 }
@@ -123,55 +166,87 @@ fmt.Printf("用户名: %s\n", name)
 ```toml
 # Redis 客户端配置
 [client.redis.default]
-address = "localhost:6379"
+# 连接地址（支持集群模式，配置多个地址）
+addr = ["localhost:6379"]
+# 用户名（Redis 6.0+ ACL）
+username = ""
+# 密码
 password = ""
+# 数据库编号，默认 0
 db = 0
-pool_size = 10
-min_idle_conns = 5
-dial_timeout = "5s"
-read_timeout = "3s"
-write_timeout = "3s"
-idle_timeout = "5m"
-idle_check_frequency = "1m"
+# 连接池大小（每个节点），默认 200
+poolSize = 200
+# 最小空闲连接数，默认 20
+minIdleConns = 20
+# 最大重试次数，-1 表示不重试，默认 3
+maxRetries = 3
+# 连接超时时间，默认 3s
+dialTimeout = "3s"
+# 读取超时时间，默认 1s
+readTimeout = "1s"
+# 写入超时时间，默认 1s
+writeTimeout = "1s"
+# 空闲连接超时时间，默认 60s
+idleTimeout = "60s"
 
-# 集群配置
-[client.redis.cluster]
-addresses = ["redis1:6379", "redis2:6379", "redis3:6379"]
-password = ""
-pool_size = 10
-min_idle_conns = 5
-dial_timeout = "5s"
-read_timeout = "3s"
-write_timeout = "3s"
-idle_timeout = "5m"
-idle_check_frequency = "1m"
+# 调试开关
+debug = false
+# 慢日志阈值（请求耗时超过此值会被记录）
+slowThreshold = "0s"
+# 指标采集开关
+enableMetric = false
+# 访问日志开关
+enableAccessLog = false
+# 连接失败时的错误级别：panic 或 error
+level = "error"
 
-# 哨兵配置
-[client.redis.sentinel]
-master_name = "mymaster"
-sentinel_addresses = ["sentinel1:26379", "sentinel2:26379", "sentinel3:26379"]
-password = ""
-pool_size = 10
-min_idle_conns = 5
-dial_timeout = "5s"
-read_timeout = "3s"
-write_timeout = "3s"
-idle_timeout = "5m"
-idle_check_frequency = "1m"
+# 分布式锁配置
+# 锁默认过期时间，默认 30s
+lockDefaultExpiration = "30s"
+# 锁默认重试间隔，默认 100ms
+lockDefaultRetryDelay = "100ms"
+# 锁默认最大重试次数，-1 表示无限重试
+lockDefaultMaxRetries = -1
+# 锁默认获取超时时间，0 表示不超时
+lockDefaultTimeout = "0s"
 ```
 
-### 连接池
-
-Jupiter 支持 Redis 连接池：
+### 使用示例
 
 ```go
-// 创建连接池
-client := redis.New(
-    redis.WithConfig("default"),
-    redis.WithPoolSize(10),
-    redis.WithMinIdleConns(5),
-    redis.WithMaxRetries(3),
+// 从配置创建客户端
+client := redis.StdConfig("default").MustSingleton()
+
+// 使用快速创建函数
+client := redis.NewRedis("default")
+
+// 分布式锁操作
+lock := client.GetLock(
+    redis.WithLockExpiration(30 * time.Second),
+    redis.WithLockRetryDelay(100 * time.Millisecond),
 )
+
+// 获取锁
+ctx := context.Background()
+err := lock.Lock(ctx, "my-resource")
+if err != nil {
+    panic(err)
+}
+defer lock.Unlock(ctx)
+```
+
+### 分布式锁配置
+
+```toml
+[client.redis.default]
+# 分布式锁默认过期时间
+lockDefaultExpiration = "30s"
+# 分布式锁重试间隔
+lockDefaultRetryDelay = "100ms"
+# 分布式锁最大重试次数，-1 表示无限重试
+lockDefaultMaxRetries = -1
+# 分布式锁获取超时时间，0 表示不超时
+lockDefaultTimeout = "0s"
 ```
 
 ### 事务
@@ -179,9 +254,9 @@ client := redis.New(
 ```go
 // 使用事务
 pipe := client.TxPipeline()
-pipe.Incr("counter")
-pipe.Expire("counter", time.Hour)
-_, err := pipe.Exec()
+pipe.Incr(ctx, "counter")
+pipe.Expire(ctx, "counter", time.Hour)
+_, err := pipe.Exec(ctx)
 if err != nil {
     panic(err)
 }

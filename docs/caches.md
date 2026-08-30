@@ -11,6 +11,10 @@ Jupiter 框架提供了丰富的缓存组件，用于提高应用程序的性能
 ### 基本使用
 
 ```go
+import (
+    "github.com/weijinwen/jupiter/pkg/cache/xfreecache"
+)
+
 // 创建 FreeCache 配置
 cfg := xfreecache.Config{
     Size:   256 * xfreecache.MB,  // 缓存容量，最小512*1024
@@ -39,17 +43,44 @@ user, err := cache.GetAndSetCacheData("user", 1, func() (User, error) {
 
 ```toml
 # FreeCache 配置
-[cache.freecache.default]
-size = 256  # 缓存大小，单位MB
-expire = "2m"  # 过期时间
-disableMetric = false  # 是否禁用指标上报
+[xfreecache.default]
+# 缓存容量，最小 512KB，最大 8GB（必填）
+# 可以使用 Size 类型：Size = 256 * MB
+size = 256MB
+# 失效时间（必填）
+expire = "2m"
+# metric 上报开关，false 开启，true 关闭，默认开启
+disableMetric = false
+# 本地缓存名称，用于日志标识和 metric 上报（选填）
+name = "default"
 ```
+
+### Size 常量
+
+```go
+const (
+    B  Size = 1
+    KB Size = 1024 * B
+    MB Size = 1024 * KB
+    GB Size = 1024 * MB
+)
+```
+
+### 注意事项
+
+- 缓存容量最小为 512KB
+- 单个条目大小必须小于缓存容量的 1/1024
+- 失效时间必须大于 0
 
 ## GolangLRU 缓存
 
 ### 基本使用
 
 ```go
+import (
+    "github.com/weijinwen/jupiter/pkg/cache/xgolanglru"
+)
+
 // 使用标准配置创建 LRU 缓存
 // 通过泛型支持指定键和值的类型
 cache := xgolanglru.StdNew[int, *User]("default")
@@ -59,17 +90,43 @@ user, err := cache.GetAndSetCacheData("user", 1, func() (*User, error) {
     // 从数据库加载用户数据
     return getUserFromDB(1)
 })
+
+// 使用自定义配置创建缓存
+config := &xgolanglru.Config{
+    Size:     200000,           // 缓存大小，默认 200000
+    Expire:   5 * time.Minute,  // 失效时间（必填）
+    Name:     "custom",         // 缓存名称
+}
+cache = xgolanglru.New[int, *User](config)
 ```
 
 ### 配置选项
 
 ```toml
 # GolangLRU 配置
-[cache.golanglru.default]
-size = 200000  # 缓存大小
-expire = "2m"  # 过期时间
-disableMetric = false  # 是否禁用指标上报
+[jupiter.xgolanglru.default]
+# 缓存大小，默认 200000
+size = 200000
+# 失效时间（必填）
+expire = "2m"
+# metric 上报开关，false 开启，true 关闭，默认开启
+disableMetric = false
 ```
+
+### 配置说明
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `size` | int | 200000 | 缓存条目数量上限 |
+| `expire` | duration | - | 失效时间（必填） |
+| `disableMetric` | bool | false | 是否禁用指标上报 |
+| `name` | string | "default" | 缓存名称（代码设置） |
+
+### 注意事项
+
+- 失效时间必须大于 0
+- 缓存大小默认为 200000 条目
+- 支持泛型，可指定键和值的类型
 
 ## 缓存最佳实践
 

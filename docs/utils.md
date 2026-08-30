@@ -7,6 +7,7 @@
 - [xattr](#xattr) - 属性键值对管理工具
 - [xbuffer](#xbuffer) - 无界缓冲区实现
 - [xcast](#xcast) - 类型转换工具
+- [xcrypto](#xcrypto) - 加密解密工具
 - [xcycle](#xcycle) - 生命周期管理工具
 - [xdebug](#xdebug) - 调试辅助工具
 - [xdefer](#xdefer) - 延迟执行栈管理
@@ -15,11 +16,16 @@
 - [xfile](#xfile) - 文件操作工具
 - [xgo](#xgo) - 并发控制工具
 - [xmap](#xmap) - Map 操作工具
+- [xmath](#xmath) - 数学运算工具
 - [xnet](#xnet) - 网络相关工具
 - [xp2c](#xp2c) - 负载均衡工具
+- [xrand](#xrand) - 随机数生成工具
 - [xreflect](#xreflect) - 反射工具
 - [xretry](#xretry) - 重试机制工具
+- [xslice](#xslice) - 切片操作工具
 - [xstring](#xstring) - 字符串处理工具
+- [xstruct](#xstruct) - 结构体操作工具
+- [xtime](#xtime) - 时间处理工具
 
 ---
 
@@ -1199,16 +1205,505 @@ func main() {
 
 ---
 
+## xcrypto
+
+### 功能说明
+
+`xcrypto` 提供了丰富的加密解密工具，包括哈希计算、对称加密、非对称加密、编码解码等功能。
+
+### 主要方法
+
+#### 哈希计算
+- `MD5(s string) string` - 计算 MD5 哈希
+- `MD5Short(s string) string` - 返回 MD5 哈希的前 8 位
+- `SHA1(s string) string` - 计算 SHA1 哈希
+- `SHA256(s string) string` - 计算 SHA256 哈希
+- `SHA512(s string) string` - 计算 SHA512 哈希
+
+#### HMAC
+- `HmacMD5(message, key string) string` - 计算 HMAC-MD5
+- `HmacSHA1(message, key string) string` - 计算 HMAC-SHA1
+- `HmacSHA256(message, key string) string` - 计算 HMAC-SHA256
+
+#### Base64 编码
+- `Base64Encode(s string) string` - Base64 编码
+- `Base64Decode(s string) (string, error)` - Base64 解码
+- `Base64URLEncode(s string) string` - Base64 URL 编码
+- `Base64URLDecode(s string) (string, error)` - Base64 URL 解码
+
+#### AES 加密
+- `AESEncrypt(key, plaintext string) (string, error)` - AES-CBC 加密
+- `AESDecrypt(key, ciphertext string) (string, error)` - AES-CBC 解密
+- `AESGCMEncrypt(key, plaintext string) (string, error)` - AES-GCM 加密
+- `AESGCMDecrypt(key, ciphertext string) (string, error)` - AES-GCM 解密
+
+#### RSA 加密
+- `GenerateRSAKeyPair(bits int) (*rsa.PrivateKey, *rsa.PublicKey, error)` - 生成 RSA 密钥对
+- `RSAEncrypt(pub *rsa.PublicKey, plaintext string) (string, error)` - RSA 加密
+- `RSADecrypt(priv *rsa.PrivateKey, ciphertext string) (string, error)` - RSA 解密
+
+#### 随机数生成
+- `GenerateRandomString(length int) string` - 生成随机字符串
+- `GenerateRandomBytes(length int) ([]byte, error)` - 生成随机字节
+
+### 使用示例
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/weijinwen/jupiter/pkg/util/xcrypto"
+)
+
+func main() {
+    // 哈希计算
+    md5Hash := xcrypto.MD5("hello")
+    fmt.Printf("MD5: %s\n", md5Hash)
+
+    sha256Hash := xcrypto.SHA256("hello")
+    fmt.Printf("SHA256: %s\n", sha256Hash)
+
+    // Base64 编码
+    encoded := xcrypto.Base64Encode("hello world")
+    fmt.Printf("Base64: %s\n", encoded)
+
+    decoded, _ := xcrypto.Base64Decode(encoded)
+    fmt.Printf("解码: %s\n", decoded)
+
+    // AES 加密
+    key := "0123456789abcdef"
+    encrypted, err := xcrypto.AESEncrypt(key, "hello")
+    if err == nil {
+        fmt.Printf("加密: %s\n", encrypted)
+        decrypted, _ := xcrypto.AESDecrypt(key, encrypted)
+        fmt.Printf("解密: %s\n", decrypted)
+    }
+
+    // 生成随机字符串
+    randomStr := xcrypto.GenerateRandomString(16)
+    fmt.Printf("随机字符串: %s\n", randomStr)
+}
+```
+
+---
+
+## xmath
+
+### 功能说明
+
+`xmath` 提供了泛型数学运算工具，支持各种数学函数和统计计算。
+
+### 主要方法
+
+#### 基础运算
+- `Abs[T](x T) T` - 绝对值
+- `Max[T](x, y T) T` - 最大值
+- `Min[T](x, y T) T` - 最小值
+- `Clamp[T](value, min, max T) T` - 范围限制
+- `Sum[T](numbers ...T) T` - 求和
+- `Average[T](numbers ...T) float64` - 平均值
+
+#### 统计函数
+- `Median[T](numbers ...T) float64` - 中位数
+- `Mode[T](numbers ...T) []T` - 众数
+
+#### 数学函数
+- `Pow[T](x, y T) float64` - 幂运算
+- `Sqrt[T](x T) float64` - 平方根
+- `Log[T](x T) float64` - 自然对数
+- `Exp[T](x T) float64` - 指数函数
+- `Ceil[T](x T) float64` - 向上取整
+- `Floor[T](x T) float64` - 向下取整
+- `Round[T](x T) float64` - 四舍五入
+
+#### 数论函数
+- `GCD[T](a, b T) T` - 最大公约数
+- `LCM[T](a, b T) T` - 最小公倍数
+- `Factorial[T](n T) uint64` - 阶乘
+- `Fibonacci[T](n T) uint64` - 斐波那契数
+- `IsPrime[T](n T) bool` - 素数判断
+- `IsEven[T](n T) bool` - 偶数判断
+
+### 使用示例
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/weijinwen/jupiter/pkg/util/xmath"
+)
+
+func main() {
+    // 基础运算
+    fmt.Printf("Abs(-5): %d\n", xmath.Abs(-5))
+    fmt.Printf("Max(3, 7): %d\n", xmath.Max(3, 7))
+    fmt.Printf("Min(3, 7): %d\n", xmath.Min(3, 7))
+    fmt.Printf("Clamp(15, 0, 10): %d\n", xmath.Clamp(15, 0, 10))
+
+    // 统计函数
+    numbers := []int{1, 2, 3, 4, 5, 5, 6}
+    fmt.Printf("Sum: %d\n", xmath.Sum(numbers...))
+    fmt.Printf("Average: %.2f\n", xmath.Average(numbers...))
+    fmt.Printf("Median: %.2f\n", xmath.Median(numbers...))
+    fmt.Printf("Mode: %v\n", xmath.Mode(numbers...))
+
+    // 数学函数
+    fmt.Printf("Pow(2, 3): %.2f\n", xmath.Pow(2, 3))
+    fmt.Printf("Sqrt(16): %.2f\n", xmath.Sqrt(16))
+    fmt.Printf("GCD(12, 8): %d\n", xmath.GCD(12, 8))
+    fmt.Printf("IsPrime(7): %v\n", xmath.IsPrime(7))
+}
+```
+
+---
+
+## xrand
+
+### 功能说明
+
+`xrand` 提供了随机数和随机字符串生成工具，支持普通随机数和加密安全的随机数生成。
+
+### 主要方法
+
+#### 随机数生成
+- `Int() int` - 非负随机整数
+- `Intn(n int) int` - [0, n) 范围内的随机整数
+- `IntRange(min, max int) int` - [min, max] 范围内的随机整数
+- `Float64() float64` - [0.0, 1.0) 范围内的随机浮点数
+- `Float64Range(min, max float64) float64` - [min, max) 范围内的随机浮点数
+- `Bool() bool` - 随机布尔值
+
+#### 随机字符串
+- `String(length int) string` - 随机字母字符串
+- `AlphanumericString(length int) string` - 随机字母数字字符串
+- `NumericString(length int) string` - 随机数字字符串
+- `Password(length int) string` - 随机密码字符串（含特殊字符）
+- `Hex(length int) string` - 随机十六进制字符串
+- `UUID() string` - UUID v4 字符串
+
+#### 切片操作
+- `Pick[T any](slice []T) T` - 随机选择一个元素
+- `PickN[T any](slice []T, n int) []T` - 随机选择 n 个元素
+- `Shuffle[T any](slice []T) []T` - 随机打乱切片
+- `WeightedPick[T any](items []T, weights []int) T` - 根据权重随机选择
+
+#### 加密安全随机数
+- `SecureInt(max int64) (int64, error)` - 加密安全的随机整数
+- `SecureBytes(length int) ([]byte, error)` - 加密安全的随机字节
+- `SecureString(length int) (string, error)` - 加密安全的随机字符串
+
+### 使用示例
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/weijinwen/jupiter/pkg/util/xrand"
+)
+
+func main() {
+    // 随机数
+    fmt.Printf("随机整数: %d\n", xrand.Int())
+    fmt.Printf("[0, 100) 随机: %d\n", xrand.Intn(100))
+    fmt.Printf("[1, 10] 随机: %d\n", xrand.IntRange(1, 10))
+
+    // 随机字符串
+    fmt.Printf("随机字母: %s\n", xrand.String(10))
+    fmt.Printf("随机数字: %s\n", xrand.NumericString(6))
+    fmt.Printf("UUID: %s\n", xrand.UUID())
+
+    // 切片操作
+    fruits := []string{"apple", "banana", "cherry", "date"}
+    fmt.Printf("随机选择: %s\n", xrand.Pick(fruits))
+    fmt.Printf("随机打乱: %v\n", xrand.Shuffle(fruits))
+
+    // 概率判断
+    if xrand.Chance(0.3) {
+        fmt.Println("30% 概率触发")
+    }
+}
+```
+
+---
+
+## xslice
+
+### 功能说明
+
+`xslice` 提供了泛型切片操作工具，支持函数式编程风格的切片处理。
+
+### 主要方法
+
+#### 查询操作
+- `Contains[T comparable](slice []T, target T) bool` - 检查元素是否存在
+- `ContainsFunc[T any](slice []T, predicate func(T) bool) bool` - 检查是否满足条件
+- `Index[T comparable](slice []T, target T) int` - 查找元素索引
+- `IndexFunc[T any](slice []T, predicate func(T) bool) int` - 查找满足条件的索引
+- `First[T any](slice []T, predicate func(T) bool) (T, bool)` - 查找第一个满足条件的元素
+- `Last[T any](slice []T, predicate func(T) bool) (T, bool)` - 查找最后一个满足条件的元素
+
+#### 转换操作
+- `Map[T any, R any](slice []T, transform func(T) R) []R` - 映射转换
+- `FlatMap[T any, R any](slice []T, transform func(T) []R) []R` - 扁平映射
+- `Filter[T any](slice []T, predicate func(T) bool) []T` - 过滤
+- `Reduce[T any, R any](slice []T, initial R, reducer func(R, T) R) R` - 归约
+
+#### 聚合操作
+- `Sum[T ~int | ~float64](slice []T) T` - 求和
+- `Min[T ~int | ~float64](slice []T) (T, bool)` - 最小值
+- `Max[T ~int | ~float64](slice []T) (T, bool)` - 最大值
+- `Count[T any](slice []T, predicate func(T) bool) int` - 计数
+- `All[T any](slice []T, predicate func(T) bool) bool` - 全部满足
+- `Any[T any](slice []T, predicate func(T) bool) bool` - 任一满足
+
+#### 分组操作
+- `Unique[T comparable](slice []T) []T` - 去重
+- `UniqueFunc[T any, K comparable](slice []T, keyFn func(T) K) []T` - 按键去重
+- `GroupBy[T any, K comparable](slice []T, keyFn func(T) K) map[K][]T` - 分组
+- `Partition[T any](slice []T, predicate func(T) bool) ([]T, []T)` - 分割
+
+#### 切片操作
+- `Chunk[T any](slice []T, size int) [][]T` - 分块
+- `Flatten[T any](slice [][]T) []T` - 扁平化
+- `Reverse[T any](slice []T)` - 反转
+- `Copy[T any](slice []T) []T` - 复制
+- `Compact[T comparable](slice []T) []T` - 移除零值
+
+### 使用示例
+
+```go
+package main
+
+import (
+    "fmt"
+    "strings"
+    "github.com/weijinwen/jupiter/pkg/util/xslice"
+)
+
+func main() {
+    numbers := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+
+    // 查询
+    fmt.Printf("包含 5: %v\n", xslice.Contains(numbers, 5))
+    fmt.Printf("第一个偶数: %v\n", xslice.First(numbers, func(n int) bool { return n%2 == 0 }))
+
+    // 转换
+    doubled := xslice.Map(numbers, func(n int) int { return n * 2 })
+    fmt.Printf("翻倍: %v\n", doubled)
+
+    evens := xslice.Filter(numbers, func(n int) bool { return n%2 == 0 })
+    fmt.Printf("偶数: %v\n", evens)
+
+    // 聚合
+    fmt.Printf("总和: %d\n", xslice.Sum(numbers))
+    min, _ := xslice.Min(numbers)
+    fmt.Printf("最小值: %d\n", min)
+
+    // 分组
+    words := []string{"apple", "banana", "avocado", "blueberry", "cherry"}
+    grouped := xslice.GroupBy(words, func(s string) string {
+        return strings.ToUpper(s[:1])
+    })
+    fmt.Printf("按首字母分组: %v\n", grouped)
+
+    // 分块
+    chunks := xslice.Chunk(numbers, 3)
+    fmt.Printf("分块: %v\n", chunks)
+}
+```
+
+---
+
+## xstruct
+
+### 功能说明
+
+`xstruct` 提供了结构体操作工具，支持结构体深拷贝、字段操作、类型转换等功能。
+
+### 主要方法
+
+#### 拷贝操作
+- `Copy(src, dst any) error` - 结构体深拷贝
+- `Clone[T any](src T) (T, error)` - 克隆结构体
+- `MustClone[T any](src T) T` - 克隆结构体（出错 panic）
+
+#### 字段操作
+- `GetField(obj any, field string) (any, error)` - 获取字段值
+- `SetField(obj any, field string, value any) error` - 设置字段值
+- `GetFieldNames(obj any) []string` - 获取所有字段名
+- `GetFieldValues(obj any) []any` - 获取所有字段值
+- `GetFieldMap(obj any) map[string]any` - 获取字段名到值的映射
+- `HasField(obj any, field string) bool` - 检查字段是否存在
+
+#### 类型转换
+- `ToMap(obj any, tagName ...string) map[string]any` - 结构体转 map
+- `MapToStruct(m map[string]any, obj any) error` - map 转结构体
+
+#### 合并操作
+- `Merge(dst, src any) error` - 合并结构体非零值字段
+- `PickFields(src any, fields ...string) map[string]any` - 选择指定字段
+- `OmitFields(src any, fields ...string) map[string]any` - 排除指定字段
+
+#### 类型检查
+- `IsStruct(v any) bool` - 检查是否为结构体
+- `IsSlice(v any) bool` - 检查是否为切片
+- `IsMap(v any) bool` - 检查是否为 map
+- `TypeName(v any) string` - 获取类型名称
+- `FullName(v any) string` - 获取完整类型名
+
+### 使用示例
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/weijinwen/jupiter/pkg/util/xstruct"
+)
+
+type User struct {
+    Name  string `json:"name"`
+    Age   int    `json:"age"`
+    Email string `json:"email"`
+}
+
+func main() {
+    user := User{Name: "张三", Age: 30, Email: "zhangsan@example.com"}
+
+    // 深拷贝
+    copied, _ := xstruct.Clone(user)
+    fmt.Printf("拷贝: %+v\n", copied)
+
+    // 字段操作
+    name, _ := xstruct.GetField(user, "Name")
+    fmt.Printf("Name: %v\n", name)
+
+    // 结构体转 map
+    m := xstruct.ToMap(user)
+    fmt.Printf("Map: %v\n", m)
+
+    // 选择字段
+    picked := xstruct.PickFields(user, "Name", "Age")
+    fmt.Printf("选择: %v\n", picked)
+
+    // 排除字段
+    omitted := xstruct.OmitFields(user, "Email")
+    fmt.Printf("排除: %v\n", omitted)
+}
+```
+
+---
+
+## xtime
+
+### 功能说明
+
+`xtime` 提供了时间处理工具，包括时间格式化、解析、计算等功能。
+
+### 主要方法
+
+#### 时间获取
+- `Now() time.Time` - 当前时间
+- `NowUnix() int64` - 当前 Unix 时间戳（秒）
+- `NowUnixMilli() int64` - 当前 Unix 时间戳（毫秒）
+- `Today() time.Time` - 今天零点
+- `Tomorrow() time.Time` - 明天零点
+- `Yesterday() time.Time` - 昨天零点
+
+#### 时间格式化
+- `Format(t time.Time, layout string) string` - 格式化时间
+- `FormatNow(layout string) string` - 格式化当前时间
+- `Parse(layout, value string) (time.Time, error)` - 解析时间字符串
+- `MustParse(layout, value string) time.Time` - 解析时间字符串（出错 panic）
+
+#### 时间戳转换
+- `UnixToDate(timestamp int64) string` - 时间戳转日期
+- `UnixToDateTime(timestamp int64) string` - 时间戳转日期时间
+- `DateToUnix(date string) (int64, error)` - 日期转时间戳
+- `DateTimeToUnix(datetime string) (int64, error)` - 日期时间转时间戳
+
+#### 时间计算
+- `Duration(start, end time.Time) time.Duration` - 计算时间间隔
+- `Age(birthday time.Time) int` - 计算年龄
+
+#### 时间区间
+- `StartOfDay(t time.Time) time.Time` - 一天开始
+- `EndOfDay(t time.Time) time.Time` - 一天结束
+- `StartOfWeek(t time.Time) time.Time` - 一周开始（周一）
+- `EndOfWeek(t time.Time) time.Time` - 一周结束
+- `StartOfMonth(t time.Time) time.Time` - 一月开始
+- `EndOfMonth(t time.Time) time.Time` - 一月结束
+- `StartOfYear(t time.Time) time.Time` - 一年开始
+- `EndOfYear(t time.Time) time.Time` - 一年结束
+
+#### 时间判断
+- `IsToday(t time.Time) bool` - 是否是今天
+- `IsTomorrow(t *time.Time) bool` - 是否是明天
+- `IsYesterday(t time.Time) bool` - 是否是昨天
+- `IsLeapYear(year int) bool` - 是否是闰年
+- `Between(t, start, end time.Time) bool` - 是否在时间范围内
+
+### 常量
+
+```go
+const (
+    FormatDateTime     = "2006-01-02 15:04:05"
+    FormatDate         = "2006-01-02"
+    FormatTime         = "15:04:05"
+    FormatDateTimeNano = "2006-01-02 15:04:05.999999999"
+    FormatMonth        = "2006-01"
+    FormatYear         = "2006"
+)
+```
+
+### 使用示例
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/weijinwen/jupiter/pkg/util/xtime"
+)
+
+func main() {
+    // 当前时间
+    fmt.Printf("当前时间: %s\n", xtime.FormatNow(xtime.FormatDateTime))
+    fmt.Printf("Unix 时间戳: %d\n", xtime.NowUnix())
+
+    // 时间解析
+    t, _ := xtime.Parse(xtime.FormatDateTime, "2024-01-15 10:30:00")
+    fmt.Printf("解析时间: %s\n", xtime.Format(t, xtime.FormatDate))
+
+    // 时间区间
+    now := xtime.Now()
+    fmt.Printf("今天开始: %s\n", xtime.Format(xtime.StartOfDay(now), xtime.FormatDateTime))
+    fmt.Printf("本周结束: %s\n", xtime.Format(xtime.EndOfWeek(now), xtime.FormatDateTime))
+
+    // 时间判断
+    fmt.Printf("是否闰年: %v\n", xtime.IsLeapYear(2024))
+    fmt.Printf("是否今天: %v\n", xtime.IsToday(now))
+}
+```
+
+---
+
 ## 总结
 
 Jupiter 框架的 `pkg/util` 目录提供了丰富的工具包，涵盖了开发中常见的各种需求：
 
 1. **基础工具**：`xattr`、`xcast`、`xstring` 等提供了基础数据类型操作
-2. **并发控制**：`xgo`、`xcycle` 等提供了强大的并发管理能力
-3. **错误处理**：`xerror`、`xretry` 等提供了完善的错误处理机制
-4. **网络和文件**：`xnet`、`xfile` 等简化了网络和文件操作
-5. **调试辅助**：`xdebug` 提供了丰富的调试工具
-6. **高级功能**：`xfieldmask`、`xp2c` 等提供了专业领域的解决方案
+2. **数学和加密**：`xmath`、`xcrypto`、`xrand` 等提供了数学运算和加密解密能力
+3. **数据处理**：`xslice`、`xmap`、`xstruct` 等提供了泛型数据处理能力
+4. **并发控制**：`xgo`、`xcycle` 等提供了强大的并发管理能力
+5. **错误处理**：`xerror`、`xretry` 等提供了完善的错误处理机制
+6. **网络和文件**：`xnet`、`xfile` 等简化了网络和文件操作
+7. **时间处理**：`xtime` 提供了丰富的时间处理功能
+8. **调试辅助**：`xdebug` 提供了丰富的调试工具
+9. **高级功能**：`xfieldmask`、`xp2c` 等提供了专业领域的解决方案
 
 合理使用这些工具包可以大大提高开发效率，减少重复代码，提高代码质量和可维护性。在实际开发中，建议根据具体需求选择合适的工具包，并遵循最佳实践，以充分发挥这些工具包的优势。
 

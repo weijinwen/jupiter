@@ -51,31 +51,67 @@ for _, user := range users {
 
 ```toml
 # MySQL 配置
-[store.mysql]
-driver = "mysql"
-dsn = "user:password@tcp(localhost:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
-max_open_conns = 100
-max_idle_conns = 10
-conn_max_lifetime = "1h"
-conn_max_idle_time = "10m"
+[database.mysql]
+# DSN 地址
+# MySQL: mysql://root:secret@tcp(127.0.0.1:3307)/mysql?timeout=20s&readTimeout=20s
+# PostgreSQL: postgres://user:password@host:port/dbname?sslmode=disable
+dsn = "root:secret@tcp(127.0.0.1:3306)/mysql?charset=utf8mb4&parseTime=True&loc=Local"
+# 调试开关
+debug = false
+# 最大空闲连接数，默认 10
+maxIdleConns = 10
+# 最大打开连接数，默认 100
+maxOpenConns = 100
+# 连接最大存活时间，默认 300s
+connMaxLifetime = "300s"
+# 拨号超时时间，默认 3s
+dialTimeout = "3s"
+# 慢日志阈值，默认 500ms
+slowThreshold = "500ms"
+# 创建连接的错误级别：panic 或 error
+level = "panic"
+# 重试次数，默认 2
+retry = 2
+# 重试等待时间，默认 200ms
+retryWaitTime = "200ms"
+# 指标采集开关
+enableMetric = false
+# 自动使用影子表
+autoShadowTable = false
+# 记录错误 sql 时，是否打印包含参数的完整 sql 语句
+detailSql = false
 
 # PostgreSQL 配置
-[store.postgres]
-driver = "postgres"
+[database.postgres]
 dsn = "host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"
-max_open_conns = 100
-max_idle_conns = 10
-conn_max_lifetime = "1h"
-conn_max_idle_time = "10m"
+debug = false
+maxIdleConns = 10
+maxOpenConns = 100
+connMaxLifetime = "300s"
+dialTimeout = "3s"
+slowThreshold = "500ms"
+level = "panic"
+retry = 2
+retryWaitTime = "200ms"
+enableMetric = false
+autoShadowTable = false
+detailSql = false
 
 # SQLite 配置
-[store.sqlite]
-driver = "sqlite"
+[database.sqlite]
 dsn = "file::memory:?cache=shared"
-max_open_conns = 100
-max_idle_conns = 10
-conn_max_lifetime = "1h"
-conn_max_idle_time = "10m"
+debug = false
+maxIdleConns = 10
+maxOpenConns = 100
+connMaxLifetime = "300s"
+dialTimeout = "3s"
+slowThreshold = "500ms"
+level = "panic"
+retry = 2
+retryWaitTime = "200ms"
+enableMetric = false
+autoShadowTable = false
+detailSql = false
 ```
 
 ### 模型定义
@@ -365,34 +401,25 @@ fmt.Printf("用户: %s, 年龄: %d\n", resultUser.Name, resultUser.Age)
 
 ```toml
 # MongoDB 配置
-[store.mongodb.default]
-uri = "mongodb://localhost:27017"
-database = "testdb"
-max_pool_size = 100
-min_pool_size = 10
-max_conn_idle_time = "5m"
-connect_timeout = "10s"
-server_selection_timeout = "30s"
+[mongo.default]
+# DSN 地址（必填）
+dsn = "mongodb://localhost:27017"
+# Socket 超时时间，默认 5s
+socketTimeout = "5s"
+# 连接池大小（最大连接数），默认 100
+poolLimit = 100
 
 # 副本集配置
-[store.mongodb.replica_set]
-uri = "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0"
-database = "testdb"
-max_pool_size = 100
-min_pool_size = 10
-max_conn_idle_time = "5m"
-connect_timeout = "10s"
-server_selection_timeout = "30s"
+[mongo.replica_set]
+dsn = "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0"
+socketTimeout = "5s"
+poolLimit = 100
 
 # 分片集群配置
-[store.mongodb.sharded_cluster]
-uri = "mongodb://mongos1:27017,mongos2:27017,mongos3:27017"
-database = "testdb"
-max_pool_size = 100
-min_pool_size = 10
-max_conn_idle_time = "5m"
-connect_timeout = "10s"
-server_selection_timeout = "30s"
+[mongo.sharded_cluster]
+dsn = "mongodb://mongos1:27017,mongos2:27017,mongos3:27017"
+socketTimeout = "5s"
+poolLimit = 100
 ```
 
 ### 查询操作
