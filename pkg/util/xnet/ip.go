@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"time"
 )
 
 // GetLocalIP ...
@@ -85,4 +86,152 @@ func GetIPs() (ips []string) {
 		}
 	}
 	return ips
+}
+
+// IsPortAvailable checks if a port is available on the given host.
+func IsPortAvailable(host string, port int) bool {
+	addr := fmt.Sprintf("%s:%d", host, port)
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return true
+	}
+	conn.Close()
+	return false
+}
+
+// IsTCPPortOpen checks if a TCP port is open on the given host.
+func IsTCPPortOpen(host string, port int) bool {
+	addr := fmt.Sprintf("%s:%d", host, port)
+	conn, err := net.DialTimeout("tcp", addr, 3*time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
+}
+
+// IsUDPPortOpen checks if a UDP port is open on the given host.
+func IsUDPPortOpen(host string, port int) bool {
+	addr := fmt.Sprintf("%s:%d", host, port)
+	conn, err := net.DialTimeout("udp", addr, 3*time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
+}
+
+// GetAvailablePort returns an available port.
+func GetAvailablePort() (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
+}
+
+// GetAvailablePorts returns n available ports.
+func GetAvailablePorts(n int) ([]int, error) {
+	ports := make([]int, 0, n)
+	for i := 0; i < n; i++ {
+		port, err := GetAvailablePort()
+		if err != nil {
+			return nil, err
+		}
+		ports = append(ports, port)
+	}
+	return ports, nil
+}
+
+// IsIPv4 checks if the given string is a valid IPv4 address.
+func IsIPv4(ip string) bool {
+	parsedIP := net.ParseIP(ip)
+	return parsedIP != nil && parsedIP.To4() != nil
+}
+
+// IsIPv6 checks if the given string is a valid IPv6 address.
+func IsIPv6(ip string) bool {
+	parsedIP := net.ParseIP(ip)
+	return parsedIP != nil && parsedIP.To4() == nil
+}
+
+// IsPrivateIP checks if the given IP is a private IP address.
+func IsPrivateIP(ip string) bool {
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return false
+	}
+	return parsedIP.IsPrivate()
+}
+
+// IsLoopbackIP checks if the given IP is a loopback address.
+func IsLoopbackIP(ip string) bool {
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return false
+	}
+	return parsedIP.IsLoopback()
+}
+
+// IsLinkLocalIP checks if the given IP is a link-local address.
+func IsLinkLocalIP(ip string) bool {
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return false
+	}
+	return parsedIP.IsLinkLocalUnicast() || parsedIP.IsLinkLocalMulticast()
+}
+
+// NormalizeIPv6 normalizes an IPv6 address.
+func NormalizeIPv6(ip string) string {
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		return ip
+	}
+	return parsedIP.String()
+}
+
+// IsCIDR checks if the given string is a valid CIDR notation.
+func IsCIDR(cidr string) bool {
+	_, _, err := net.ParseCIDR(cidr)
+	return err == nil
+}
+
+// IsMACAddress checks if the given string is a valid MAC address.
+func IsMACAddress(mac string) bool {
+	_, err := net.ParseMAC(mac)
+	return err == nil
+}
+
+// GetInterfaceByName returns the interface by name.
+func GetInterfaceByName(name string) (*net.Interface, error) {
+	return net.InterfaceByName(name)
+}
+
+// GetInterfaces returns all network interfaces.
+func GetInterfaces() ([]net.Interface, error) {
+	return net.Interfaces()
+}
+
+// GetHostByName returns the IP addresses for the given hostname.
+func GetHostByName(hostname string) ([]string, error) {
+	ips, err := net.LookupIP(hostname)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, len(ips))
+	for i, ip := range ips {
+		result[i] = ip.String()
+	}
+	return result, nil
+}
+
+// GetAddrInfo returns the address information for the given hostname.
+func GetAddrInfo(hostname string) (*net.TCPAddr, error) {
+	return net.ResolveTCPAddr("tcp", hostname+":0")
 }
