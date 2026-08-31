@@ -38,4 +38,6 @@ const (
 
 	// ModStoreMongo ...
 	ModStoreMongo = "store.mongo"
+	// ModStoreElasticsearch ...
+	ModStoreElasticsearch = "store.elasticsearch"
 )
