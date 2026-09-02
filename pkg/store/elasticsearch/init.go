@@ -3,26 +3,11 @@ package elasticsearch
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"sync"
 	"time"
 
 	"github.com/weijinwen/jupiter/pkg/server/governor"
-)
-
-var (
-	// ErrEmptyAddresses 表示未配置任何节点地址
-	ErrEmptyAddresses = errors.New("elasticsearch addresses is empty")
-
-	// ErrConnectFailed 表示启动时连通性检查失败
-	ErrConnectFailed = errors.New("elasticsearch connect failed")
-
-	// ErrSlowQuery 表示请求耗时超过慢查询阈值
-	ErrSlowQuery = errors.New("elasticsearch slow query")
-
-	// ErrDocumentNotFound 表示文档不存在
-	ErrDocumentNotFound = errors.New("elasticsearch document not found")
 )
 
 // instances 保存已构建的客户端，供 governor 调试端点查询集群状态

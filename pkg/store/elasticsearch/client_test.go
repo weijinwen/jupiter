@@ -8,6 +8,42 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestClient_IndexDocument(t *testing.T) {
+	srv := esStub(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"_index":"books","_id":"1","result":"created","_shards":{"total":2,"successful":1,"failed":0},"_version":1,"_seq_no":0,"_primary_term":1}`))
+	})
+	client, err := testConfig("index-doc", srv.URL).Build()
+	require.NoError(t, err)
+
+	err = client.IndexDocument(t.Context(), "books", "1", map[string]any{"title": "Go 语言", "pages": 380})
+	require.NoError(t, err)
+}
+
+func TestClient_UpdateDocument(t *testing.T) {
+	srv := esStub(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"_index":"books","_id":"1","result":"updated","_shards":{"total":2,"successful":1,"failed":0},"_version":2,"_seq_no":1,"_primary_term":1}`))
+	})
+	client, err := testConfig("update-doc", srv.URL).Build()
+	require.NoError(t, err)
+
+	err = client.UpdateDocument(t.Context(), "books", "1", map[string]any{"pages": 400})
+	require.NoError(t, err)
+}
+
+func TestClient_DeleteDocument(t *testing.T) {
+	srv := esStub(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"_index":"books","_id":"1","result":"deleted","_shards":{"total":2,"successful":1,"failed":0},"_version":2,"_seq_no":1,"_primary_term":1}`))
+	})
+	client, err := testConfig("delete-doc", srv.URL).Build()
+	require.NoError(t, err)
+
+	err = client.DeleteDocument(t.Context(), "books", "1")
+	require.NoError(t, err)
+}
+
 func TestClient_GetSource(t *testing.T) {
 	srv := esStub(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -45,7 +81,7 @@ func TestClient_GetSource_NotFound(t *testing.T) {
 	assert.ErrorIs(t, err, ErrDocumentNotFound)
 }
 
-func TestSearchInto(t *testing.T) {
+func TestClient_SearchInto(t *testing.T) {
 	srv := esStub(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
@@ -66,7 +102,7 @@ func TestSearchInto(t *testing.T) {
 	type book struct {
 		Title string `json:"title"`
 	}
-	books, err := SearchInto[book](t.Context(), client, "books", nil)
+	books, err := client.SearchInto[book](t.Context(), "books", nil)
 
 	require.NoError(t, err)
 	require.Len(t, books, 2)
@@ -75,7 +111,7 @@ func TestSearchInto(t *testing.T) {
 }
 
 // 命中列表为空时应返回空切片而非 nil，且不报错。
-func TestSearchInto_NoHits(t *testing.T) {
+func TestClient_SearchInto_NoHits(t *testing.T) {
 	srv := esStub(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"took":1,"hits":{"total":{"value":0,"relation":"eq"},"hits":[]}}`))
@@ -87,7 +123,7 @@ func TestSearchInto_NoHits(t *testing.T) {
 	type book struct {
 		Title string `json:"title"`
 	}
-	books, err := SearchInto[book](t.Context(), client, "books", nil)
+	books, err := client.SearchInto[book](t.Context(), "books", nil)
 
 	require.NoError(t, err)
 	assert.NotNil(t, books)

@@ -723,6 +723,7 @@ Jupiter 框架提供了丰富的存储组件，支持多种数据库和搜索引
 ## 下一步
 
 - 了解 [MeiliSearch 存储](./meilisearch.md)
+- 了解 [Elasticsearch 存储](./elasticsearch.md)
 - 探索 [缓存组件](./caches.md)
 - 查看 [工具函数](./utils.md)
 - 学习 [日志组件](./xlog.md)
