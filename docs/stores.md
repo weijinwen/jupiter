@@ -97,8 +97,10 @@ enableMetric = false
 autoShadowTable = false
 detailSql = false
 
-# SQLite 配置
+# SQLite 配置（纯 Go 驱动 github.com/glebarez/sqlite，无需 CGO）
 [database.sqlite]
+# 支持写法：file:data/app.db?cache=shared、data/app.db、:memory:、sqlite://data/app.db
+# 底层方言语义遵循 SQLite URI（如 ?_pragma=busy_timeout(5000)）
 dsn = "file::memory:?cache=shared"
 debug = false
 maxIdleConns = 10
@@ -113,6 +115,11 @@ enableMetric = false
 autoShadowTable = false
 detailSql = false
 ```
+
+> **数据库类型识别**：GORM 存储根据 `dsn` 自动选择驱动——`postgres://` / `postgresql://` 走 PostgreSQL；以 `file:`、`sqlite://`、`sqlite3://` 开头，或以 `.db` / `.db3` / `.sqlite` / `.sqlite3` 结尾，或为 `:memory:` 时走 SQLite；其余一律按 MySQL 解析。
+>
+> **SQLite 并发提示**：SQLite 写操作是串行化的，建议把 `maxOpenConns` 设为较小值（如 1~4），并配合 `?_pragma=busy_timeout(5000)` 减少 `database is locked`；`:memory:` 模式下需 `cache=shared` 且保持连接复用，否则每次取新连接都会得到空库。
+
 
 ### 模型定义
 

@@ -36,15 +36,46 @@ var (
 	errInvalidDSNNoSlash   = errors.New("invalid DSN: missing the slash separating the database name")
 )
 
+// DSNType 数据库类型
+type DSNType string
+
+const (
+	DSNTypeMySQL    DSNType = "mysql"
+	DSNTypePostgres DSNType = "postgres"
+	DSNTypeSQLite   DSNType = "sqlite"
+)
+
+// detectDSNType 根据 DSN 判断数据库类型。
+//   - postgres:// / postgresql:// 前缀 => PostgreSQL
+//   - sqlite:// 前缀、file: 前缀、:memory: 或 *.db / *.sqlite / *.sqlite3 / *.db3 结尾 => SQLite
+//   - 其余 => MySQL
+func detectDSNType(dsn string) DSNType {
+	lower := strings.ToLower(dsn)
+	switch {
+	case strings.HasPrefix(lower, "postgres://"), strings.HasPrefix(lower, "postgresql://"):
+		return DSNTypePostgres
+	case strings.HasPrefix(lower, "sqlite://"), strings.HasPrefix(lower, "sqlite3://"),
+		strings.HasPrefix(lower, "file:"),
+		lower == ":memory:",
+		strings.HasPrefix(lower, ":memory:?"),
+		strings.HasSuffix(lower, ".db"), strings.HasSuffix(lower, ".db3"),
+		strings.HasSuffix(lower, ".sqlite"), strings.HasSuffix(lower, ".sqlite3"):
+		return DSNTypeSQLite
+	default:
+		return DSNTypeMySQL
+	}
+}
+
 // parseDSN parses the DSN string to a NodeConfig.
 func parseDSN(dsn string) (cfg *DSN, err error) {
-	// 检查是否是 PostgreSQL 格式
-	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+	switch detectDSNType(dsn) {
+	case DSNTypePostgres:
 		return parsePostgresDSN(dsn)
+	case DSNTypeSQLite:
+		return parseSQLiteDSN(dsn)
+	default:
+		return parseMySQLDSN(dsn)
 	}
-	
-	// 默认使用 MySQL 格式解析
-	return parseMySQLDSN(dsn)
 }
 
 // parseMySQLDSN parses the MySQL DSN string to a NodeConfig.
@@ -204,4 +235,55 @@ func parsePostgresDSN(dsn string) (cfg *DSN, err error) {
 	cfg.Net = "tcp"
 	
 	return
+}
+
+// parseSQLiteDSN parses the SQLite DSN string to a NodeConfig.
+// SQLite 没有网络连接的概念，这里只做信息提取（DBName/Addr/Params），
+// 返回的 DSN 结构仅用于指标与日志展示，原始 DSN 会原样交给驱动。
+// 支持的写法：
+//
+//	file:data.db?cache=shared
+//	data.db
+//	:memory:
+//	sqlite://data.db?cache=shared（自定义前缀，驱动不认，open 时会去掉）
+func parseSQLiteDSN(dsn string) (cfg *DSN, err error) {
+	cfg = new(DSN)
+	dsn = strings.TrimPrefix(dsn, "sqlite3://")
+	dsn = strings.TrimPrefix(dsn, "sqlite://")
+	cfg.Net = "file"
+
+	pathParams := dsn
+	if strings.HasPrefix(dsn, "file:") {
+		pathParams = strings.TrimPrefix(dsn, "file:")
+		if strings.HasPrefix(pathParams, "//") {
+			pathParams = pathParams[2:]
+		}
+	}
+
+	if idx := strings.Index(pathParams, "?"); idx >= 0 {
+		cfg.DBName = pathParams[:idx]
+		if err = parseDSNParams(cfg, pathParams[idx+1:]); err != nil {
+			return nil, err
+		}
+	} else {
+		cfg.DBName = pathParams
+	}
+
+	if cfg.DBName == "" {
+		cfg.DBName = "memory"
+	}
+	cfg.Addr = cfg.DBName
+
+	return cfg, nil
+}
+
+// driverDSN 返回交给数据库驱动的 DSN。
+// SQLite 会去掉自定义的 sqlite:// / sqlite3:// 前缀。
+func driverDSN(dsn string) string {
+	if detectDSNType(dsn) == DSNTypeSQLite {
+		dsn = strings.TrimPrefix(dsn, "sqlite3://")
+		dsn = strings.TrimPrefix(dsn, "sqlite://")
+	}
+
+	return dsn
 }

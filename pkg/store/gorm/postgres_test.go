@@ -15,6 +15,7 @@
 package gorm
 
 import (
+	"os"
 	"testing"
 
 	"gorm.io/gorm"
@@ -82,11 +83,18 @@ func TestPostgresDSN(t *testing.T) {
 	}
 }
 
-// TestOpenPostgres 测试 PostgreSQL 连接（需要实际的 PostgreSQL 服务器）
-// 注意：这个测试需要实际的 PostgreSQL 服务器才能运行，在 CI/CD 环境中应该跳过
-func TestOpenPostgres(t *testing.T) {
-	// 使用环境变量获取 DSN，如果没有设置则跳过测试
-	dsn := "postgres://user:password@localhost:5432/testdb?sslmode=disable"
+// pgTestDSNEnv 是集成测试使用的 PostgreSQL DSN 环境变量名。
+// 未设置时相关测试直接跳过，避免依赖真实数据库或硬编码凭据。
+const pgTestDSNEnv = "JUPITER_TEST_POSTGRES_DSN"
+
+// openPostgresForTest 读取环境变量中的 PostgreSQL DSN 并建立连接，未配置或连接失败时跳过测试。
+func openPostgresForTest(t *testing.T) *gorm.DB {
+	t.Helper()
+
+	dsn := os.Getenv(pgTestDSNEnv)
+	if dsn == "" {
+		t.Skipf("set %s to run PostgreSQL integration test", pgTestDSNEnv)
+	}
 
 	config := &Config{
 		DSN:             dsn,
@@ -102,12 +110,17 @@ func TestOpenPostgres(t *testing.T) {
 		RetryWaitTime:   0,
 	}
 
-	// 尝试打开连接
 	db, err := open(config)
 	if err != nil {
 		t.Skipf("Skipping PostgreSQL test, connection failed: %v", err)
-		return
 	}
+
+	return db
+}
+
+// TestOpenPostgres 测试 PostgreSQL 连接（需要设置 JUPITER_TEST_POSTGRES_DSN）
+func TestOpenPostgres(t *testing.T) {
+	db := openPostgresForTest(t)
 
 	// 检查连接是否有效
 	sqlDB, err := db.DB()
@@ -132,27 +145,7 @@ func TestOpenPostgres(t *testing.T) {
 
 // TestGormWithPostgres 测试 GORM 基本功能与 PostgreSQL
 func TestGormWithPostgres(t *testing.T) {
-	dsn := "postgres://user:password@localhost:5432/testdb?sslmode=disable"
-
-	config := &Config{
-		DSN:             dsn,
-		Debug:           true,
-		MaxIdleConns:    10,
-		MaxOpenConns:    100,
-		ConnMaxLifetime: 0,
-		OnDialError:     "panic",
-		SlowThreshold:   0,
-		DialTimeout:     0,
-		AutoShadowTable: false,
-		Retry:           1,
-		RetryWaitTime:   0,
-	}
-
-	db, err := open(config)
-	if err != nil {
-		t.Skipf("Skipping PostgreSQL test, connection failed: %v", err)
-		return
-	}
+	db := openPostgresForTest(t)
 
 	// 定义测试模型
 	type TestModel struct {
@@ -194,28 +187,7 @@ func TestGormWithPostgres(t *testing.T) {
 
 // TestCreateTablesAndInsertData 测试创建表和插入数据
 func TestCreateTablesAndInsertData(t *testing.T) {
-	// 使用您提供的实际 PostgreSQL 连接信息
-	dsn := "postgres://user_kJrhNY:izb5cyjZHmYmaT5x@8.153.16.252:5432/postgres?sslmode=disable"
-
-	config := &Config{
-		DSN:             dsn,
-		Debug:           true,
-		MaxIdleConns:    10,
-		MaxOpenConns:    100,
-		ConnMaxLifetime: 0,
-		OnDialError:     "panic",
-		SlowThreshold:   0,
-		DialTimeout:     0,
-		AutoShadowTable: false,
-		Retry:           1,
-		RetryWaitTime:   0,
-	}
-
-	db, err := open(config)
-	if err != nil {
-		t.Skipf("Skipping PostgreSQL test, connection failed: %v", err)
-		return
-	}
+	db := openPostgresForTest(t)
 
 	// 定义用户模型
 	type User struct {

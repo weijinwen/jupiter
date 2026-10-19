@@ -16,6 +16,7 @@ package gorm
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 	"time"
 
@@ -45,7 +46,7 @@ func TestStdNew(t *testing.T) {
 		config  string
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		// 注意：StdConfig 读取的键是 {prefix}.database.{name}，即 jupiter.database.demo。
 		{
 			name: "std new",
 			args: args{
@@ -53,16 +54,16 @@ func TestStdNew(t *testing.T) {
 				opts: []any{},
 			},
 			wantErr: false,
-			config: `
-			[jupiter.mysql.demo]
-				dsn="root:123456@tcp(localhost:3306)/mysql?timeout=20s&readTimeout=20s"
+			config: fmt.Sprintf(`
+			[jupiter.database.demo]
+				dsn=%q
 				debug=true
 				maxIdleConns=50
 				connMaxLifeTime="20m"
 				level="panic"
 				slowThreshold="400ms"
 				dialTimeout="1s"
-			`,
+			`, testDSN(t)),
 		},
 	}
 	for _, tt := range tests {
@@ -72,14 +73,26 @@ func TestStdNew(t *testing.T) {
 			if tt.wantErr {
 				assert.Panics(t, func() { StdConfig(tt.args.name).MustBuild() })
 			} else {
-				assert.NotPanics(t, func() { StdConfig(tt.args.name).MustBuild() })
+				assert.NotPanics(t, func() { closeDB(t, StdConfig(tt.args.name).MustBuild()) })
 			}
 		})
 
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Nil(t, cfg.LoadFromReader(bytes.NewReader([]byte(tt.config)), toml.Unmarshal))
 			defer cfg.Reset()
-			assert.NotPanics(t, func() { StdConfig(tt.args.name).MustBuild() })
+			assert.NotPanics(t, func() { closeDB(t, StdConfig(tt.args.name).MustBuild()) })
 		})
+	}
+}
+
+// closeDB 关闭底层连接，避免 SQLite 临时文件被占用导致 t.TempDir() 清理失败。
+func closeDB(t *testing.T, db *DB) {
+	t.Helper()
+
+	if db == nil {
+		return
+	}
+	if sqlDB, err := db.DB(); err == nil {
+		t.Cleanup(func() { _ = sqlDB.Close() })
 	}
 }

@@ -17,6 +17,7 @@ package gorm
 import (
 	"strings"
 
+	"github.com/glebarez/sqlite"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -37,10 +38,14 @@ func open(options *Config) (*gorm.DB, error) {
 	var err error
 
 	// 根据DSN前缀判断数据库类型
-	if strings.HasPrefix(options.DSN, "postgres://") || strings.HasPrefix(options.DSN, "postgresql://") {
+	switch detectDSNType(options.DSN) {
+	case DSNTypePostgres:
 		// PostgreSQL
 		inner, err = gorm.Open(postgres.Open(options.DSN), &options.gormConfig)
-	} else {
+	case DSNTypeSQLite:
+		// SQLite（纯 Go 驱动，无需 CGO）
+		inner, err = gorm.Open(sqlite.Open(driverDSN(options.DSN)), &options.gormConfig)
+	default:
 		// 默认使用 MySQL
 		inner, err = gorm.Open(mysql.Open(options.DSN), &options.gormConfig)
 	}

@@ -53,6 +53,7 @@ type Config struct {
 	// DSN地址:
 	// MySQL: mysql://root:secret@tcp(127.0.0.1:3307)/mysql?timeout=20s&readTimeout=20s
 	// PostgreSQL: postgres://user:password@host:port/dbname?sslmode=disable
+	// SQLite: file:data.db?cache=shared、:memory:、data.db 或 sqlite://data.db
 	DSN string `json:"dsn" toml:"dsn"`
 	// Debug开关
 	Debug bool `json:"debug" toml:"debug"`
