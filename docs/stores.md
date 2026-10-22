@@ -1,6 +1,6 @@
 # Jupiter 存储组件
 
-本文档介绍 Jupiter 框架中的各种存储组件，包括 GORM、MongoDB、MeiliSearch 等，以及它们的使用方法和配置选项。
+本文档介绍 Jupiter 框架中的各种存储组件，包括 GORM、MongoDB、MeiliSearch、Elasticsearch 等，以及它们的使用方法和配置选项。
 
 ## 概述
 
@@ -730,6 +730,7 @@ Jupiter 框架提供了丰富的存储组件，支持多种数据库和搜索引
 ## 下一步
 
 - 了解 [MeiliSearch 存储](./meilisearch.md)
+- 了解 [Elasticsearch 存储](./elasticsearch.md)
 - 探索 [缓存组件](./caches.md)
 - 查看 [工具函数](./utils.md)
 - 学习 [日志组件](./xlog.md)

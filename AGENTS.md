@@ -13,7 +13,7 @@ Jupiter 是 Go 微服务框架库，参考了 [douyu/jupiter](https://github.com
 - `pkg/flag/` 命令行 flag（`--config`、`--config-namespace`、`--watch`、`--version` 等）
 - `pkg/server/` 服务接口与实现：`governor`（运维端口）、`xgin`（Gin）、`xhertz`（Hertz，依赖 `cloudwego/hertz`，默认 netpoll 传输）
 - `pkg/client/` 客户端：`redis`、`resty`
-- `pkg/store/` 存储封装：`gorm`、`meilisearch`、`mongox`
+- `pkg/store/` 存储封装：`elasticsearch`、`gorm`、`meilisearch`、`mongox`
 - `pkg/cache/` 缓存：`xfreecache`、`xgolanglru`
 - `pkg/xlog/` 基于 zap 的日志（Hertz 引擎日志 hlog 也接入此管道）
 - `pkg/util/` 通用工具（xgo、xmap、xcast 等）；`pkg/worker/` worker 命令注册与执行

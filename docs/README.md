@@ -16,6 +16,7 @@
 - [工具函数](./utils.md)
 - [日志组件](./xlog.md)
 - [MeiliSearch 存储](./meilisearch.md)
+- [Elasticsearch 存储](./elasticsearch.md)
 - [Worker 命令执行](./worker.md)
 
 ## 许可证

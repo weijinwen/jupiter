@@ -21,4 +21,5 @@ const (
 	ModuleStoreTableStore
 	ModuleClusterRedis
 	ModuleClientSearch
+	ModuleStoreElasticsearch
 )
