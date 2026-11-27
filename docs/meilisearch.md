@@ -96,12 +96,14 @@ enableAccessLog = false
 package main
 
 import (
+    "context"
     "fmt"
     
     "github.com/weijinwen/jupiter/pkg/store/meilisearch"
 )
 
 func main() {
+    ctx := context.Background()
     // 创建客户端
     client, err := meilisearch.StdConfig("default").Singleton()
     if err != nil {
@@ -109,7 +111,7 @@ func main() {
     }
     
     // 在指定索引上执行搜索
-    resp, err := client.Search("products", &meilisearch.SearchRequest{
+    resp, err := client.Search(ctx, "products", &meilisearch.SearchRequest{
         Query: "laptop",
         Page:  1,
         HitsPerPage: meilisearch.Int64Ptr(20),
@@ -128,12 +130,14 @@ func main() {
 package main
 
 import (
+    "context"
     "fmt"
     
     "github.com/weijinwen/jupiter/pkg/store/meilisearch"
 )
 
 func main() {
+    ctx := context.Background()
     // 创建客户端
     client, err := meilisearch.StdConfig("default").Singleton()
     if err != nil {
@@ -150,7 +154,7 @@ func main() {
         SetHitsPerPage(10)
     
     // 执行搜索
-    resp, err := client.Search("products", builder.Build())
+    resp, err := client.Search(ctx, "products", builder.Build())
     if err != nil {
         panic(err)
     }
@@ -164,32 +168,33 @@ func main() {
 ### 文档操作
 
 ```go
+ctx := context.Background()
 // 添加文档
 docs := []map[string]any{
     {"id": 1, "name": "Product 1", "price": 99.99},
     {"id": 2, "name": "Product 2", "price": 149.99},
 }
-task, err := client.AddDocuments("products", docs, "id")
+task, err := client.AddDocuments(ctx, "products", docs, "id")
 if err != nil {
     panic(err)
 }
 
 // 更新文档
-task, err = client.UpdateDocuments("products", docs, "id")
+task, err = client.UpdateDocuments(ctx, "products", docs, "id")
 if err != nil {
     panic(err)
 }
 
 // 获取单个文档
 var result map[string]any
-err = client.GetDocument("products", "1", &meilisearch.DocumentQuery{}, &result)
+err = client.GetDocument(ctx, "products", "1", &meilisearch.DocumentQuery{}, &result)
 if err != nil {
     panic(err)
 }
 
 // 获取多个文档
 var results meilisearch.DocumentsResult
-err = client.GetDocuments("products", &meilisearch.DocumentsQuery{
+err = client.GetDocuments(ctx, "products", &meilisearch.DocumentsQuery{
     Limit: 10,
 }, &results)
 if err != nil {
@@ -197,19 +202,19 @@ if err != nil {
 }
 
 // 删除单个文档
-task, err = client.DeleteDocument("products", "1")
+task, err = client.DeleteDocument(ctx, "products", "1")
 if err != nil {
     panic(err)
 }
 
 // 删除多个文档
-task, err = client.DeleteDocuments("products", []string{"1", "2"})
+task, err = client.DeleteDocuments(ctx, "products", []string{"1", "2"})
 if err != nil {
     panic(err)
 }
 
 // 删除所有文档
-task, err = client.DeleteAllDocuments("products")
+task, err = client.DeleteAllDocuments(ctx, "products")
 if err != nil {
     panic(err)
 }
@@ -339,12 +344,13 @@ builder := meilisearch.NewBuilder().
 普通搜索分面统计用于在搜索文档的同时返回 facet 分布，例如品牌、分类或标签计数。
 
 ```go
+ctx := context.Background()
 request := meilisearch.NewBuilder().
     SetQuery("phone").
     SetFacets("brand", "category").
     Build()
 
-resp, err := client.Search("products", &request)
+resp, err := client.Search(ctx, "products", &request)
 if err != nil {
     return err
 }
@@ -359,6 +365,7 @@ fmt.Printf("facet distribution: %s\n", resp.FacetDistribution)
 FacetSearch 用于在某个 facet 字段的值集合中做 autocomplete。字段需要先在 MeiliSearch 中配置为可过滤/可分面字段，例如 `filterableAttributes` 包含 `brand`。
 
 ```go
+ctx := context.Background()
 request := meilisearch.NewFacetSearchBuilder().
     SetFacetName("brand").
     SetFacetQuery("app").
@@ -366,7 +373,7 @@ request := meilisearch.NewFacetSearchBuilder().
     AddFilter("status", "=", "online").
     Build()
 
-resp, err := client.FacetSearch("products", &request)
+resp, err := client.FacetSearch(ctx, "products", &request)
 if err != nil {
     return err
 }
@@ -379,7 +386,8 @@ for _, hit := range resp.FacetHits {
 如果需要 SDK 原始 JSON，可以使用：
 
 ```go
-raw, err := client.FacetSearchRaw("products", &request)
+ctx := context.Background()
+raw, err := client.FacetSearchRaw(ctx, "products", &request)
 ```
 
 ## 重试机制
@@ -409,6 +417,7 @@ retryWaitTime = "100ms"      # 初始等待时间 100ms
 - 重试次数耗尽后，返回最后一次的错误
 
 ```go
+ctx := context.Background()
 // 使用带重试的客户端
 client, err := meilisearch.StdConfig("default").Singleton()
 if err != nil {
@@ -416,7 +425,7 @@ if err != nil {
 }
 
 // 执行搜索，失败时会自动重试
-resp, err := client.Search("products", &meilisearch.SearchRequest{
+resp, err := client.Search(ctx, "products", &meilisearch.SearchRequest{
     Query: "laptop",
 })
 if err != nil {

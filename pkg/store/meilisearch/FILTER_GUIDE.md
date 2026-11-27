@@ -238,8 +238,9 @@ client = meilisearch.StdConfig("default").MustSingleton()
 ### 搜索操作
 
 ```go
+ctx := context.Background()
 // 执行搜索
-resp, err := client.Search("products", &meilisearch.SearchRequest{
+resp, err := client.Search(ctx, "products", &meilisearch.SearchRequest{
     Query:       "smartphone",
     Page:        1,
     HitsPerPage: 20,
@@ -249,35 +250,36 @@ resp, err := client.Search("products", &meilisearch.SearchRequest{
 ### 文档操作
 
 ```go
+ctx := context.Background()
 // 获取文档列表
 var result meilisearch.DocumentsResult
-err := client.GetDocuments("products", &meilisearch.DocumentsQuery{
+err := client.GetDocuments(ctx, "products", &meilisearch.DocumentsQuery{
     Limit: 10,
 }, &result)
 
 // 获取单个文档
 var doc map[string]any
-err = client.GetDocument("products", "1", &meilisearch.DocumentQuery{}, &doc)
+err = client.GetDocument(ctx, "products", "1", &meilisearch.DocumentQuery{}, &doc)
 
 // 添加文档
 docs := []map[string]any{
     {"id": 1, "name": "Product 1", "price": 99.99},
     {"id": 2, "name": "Product 2", "price": 149.99},
 }
-task, err := client.AddDocuments("products", docs, nil)
+task, err := client.AddDocuments(ctx, "products", docs, "")
 
 // 添加文档（指定主键）
 primaryKey := "id"
-task, err := client.AddDocuments("products", docs, &primaryKey)
+task, err := client.AddDocuments(ctx, "products", docs, &primaryKey)
 
 // 更新文档
-task, err := client.UpdateDocuments("products", docs, nil)
+task, err := client.UpdateDocuments(ctx, "products", docs, "")
 
 // 删除单个文档
-task, err := client.DeleteDocument("products", "1")
+task, err := client.DeleteDocument(ctx, "products", "1")
 
 // 删除所有文档
-task, err := client.DeleteAllDocuments("products")
+task, err := client.DeleteAllDocuments(ctx, "products")
 ```
 
 ### 索引操作
@@ -455,12 +457,14 @@ searchRequest := builder.Build()
 package main
 
 import (
+    "context"
     "fmt"
     "github.com/weijinwen/jupiter/pkg/store/meilisearch"
     "github.com/meilisearch/meilisearch-go"
 )
 
 func main() {
+    ctx := context.Background()
     // 创建客户端
     client, err := meilisearch.StdConfig("default").Singleton()
     if err != nil {
@@ -477,7 +481,7 @@ func main() {
         AddSort("price", true)
 
     // 执行搜索
-    resp, err := client.Search("products", builder.Build())
+    resp, err := client.Search(ctx, "products", builder.Build())
     if err != nil {
         panic(err)
     }
@@ -489,7 +493,7 @@ func main() {
         {"id": "1", "name": "iPhone 15", "price": 999.99, "category": "electronics"},
         {"id": "2", "name": "Samsung Galaxy", "price": 799.99, "category": "electronics"},
     }
-    task, err := client.AddDocuments("products", docs, nil)
+    task, err := client.AddDocuments(ctx, "products", docs, "")
     if err != nil {
         panic(err)
     }
@@ -497,7 +501,7 @@ func main() {
 
     // 获取文档
     var result meilisearch.DocumentsResult
-    err = client.GetDocuments("products", &meilisearch.DocumentsQuery{
+    err = client.GetDocuments(ctx, "products", &meilisearch.DocumentsQuery{
         Limit: 10,
     }, &result)
     if err != nil {

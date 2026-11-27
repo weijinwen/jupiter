@@ -308,16 +308,13 @@ func main() {
         panic(err)
     }
     
-    // 获取索引包装器
-    indexWrapper := client.GetIndex("users")
-    
     // 构建查询
     builder := meilisearch.NewBuilder().
         SetQuery("").
         AddFilterStruct(filter)
     
     // 执行搜索 - 注意：Search方法现在需要两个参数：查询字符串和搜索请求
-    resp, err := indexWrapper.Search("", builder.Build())
+    resp, err := client.Search(ctx, "users", builder.Build())
     if err != nil {
         panic(err)
     }

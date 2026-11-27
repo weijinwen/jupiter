@@ -224,8 +224,11 @@ func ExampleClientUsage() {
         panic(err)
     }
 
+    // 请求上下文
+    ctx := context.Background()
+
     // 执行搜索
-    resp, err := client.Search("products", &meilisearch.SearchRequest{
+    resp, err := client.Search(ctx, "products", &meilisearch.SearchRequest{
         Query: "smartphone",
         Page:  1,
         HitsPerPage: 20,
@@ -233,7 +236,7 @@ func ExampleClientUsage() {
 
     // 获取文档
     var result meilisearch.DocumentsResult
-    err = client.GetDocuments("products", &meilisearch.DocumentsQuery{
+    err = client.GetDocuments(ctx, "products", &meilisearch.DocumentsQuery{
         Limit: 10,
     }, &result)
 
@@ -242,15 +245,15 @@ func ExampleClientUsage() {
         {"id": 1, "name": "Product 1", "price": 99.99},
         {"id": 2, "name": "Product 2", "price": 149.99},
     }
-    task, err := client.AddDocuments("products", docs, nil)
+    task, err := client.AddDocuments(ctx, "products", docs, "")
 
     // 更新文档
-    task, err = client.UpdateDocuments("products", docs, nil)
+    task, err = client.UpdateDocuments(ctx, "products", docs, "")
 
     // 删除文档
-    task, err = client.DeleteDocument("products", "1")
+    task, err = client.DeleteDocument(ctx, "products", "1")
 
     // 删除所有文档
-    task, err = client.DeleteAllDocuments("products")
+    task, err = client.DeleteAllDocuments(ctx, "products")
     `)
 }
